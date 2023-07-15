@@ -1,0 +1,21 @@
+{
+  "name": "Timber",
+  "version": "1.0.0",
+  "keywords": "Arduino, Logging, Debugging",
+  "description": "A wrapper logging Arduino library",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/fbiego/Timber"
+  },
+  "authors":
+  [
+    {
+        "name": "fbiego",
+        "email": "fbiego.fb@gmail.com",
+        "maintainer": true
+    }
+  ],
+  "frameworks": "arduino",
+  "platforms": "*"
+}
