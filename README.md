@@ -7,6 +7,7 @@ This is a wrapper logger Arduino library that takes inspiration from [Timber](ht
 ```
 void setPrint(bool state);
 void showTime(bool state);
+void setColors(bool state);
 void setLogCallback(void (*callback)(Level, unsigned long, String));
 
 void d(String msg);
