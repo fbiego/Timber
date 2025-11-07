@@ -2,6 +2,7 @@ Timber		KEYWORD1
 
 setLogCallback			KEYWORD2
 setDebug			KEYWORD2
+setColors           KEYWORD2
 d	KEYWORD2
 e	KEYWORD2
 i	KEYWORD2

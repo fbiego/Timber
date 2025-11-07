@@ -56,6 +56,16 @@ void TimberClass::showTime(bool state)
 }
 
 /*!
+	@brief  set the colors state
+	@param  state
+			the state
+*/
+void TimberClass::setColors(bool state)
+{
+	_colors = state;
+}
+
+/*!
 	@brief  set the logging callback
 	@param  callback
 			the  callback
@@ -341,6 +351,34 @@ void TimberClass::sendLogs(Level level, String message)
 	else
 	{
 		msg = levelName(level) + ": " + message + "\n";
+	}
+
+	if (_colors)
+	{
+		// Add color codes based on level
+		switch (level)
+		{
+		case DEBUG:
+			msg = "\033[34m" + msg + "\033[0m"; // Blue
+			break;
+		case INFO:
+			msg = "\033[32m" + msg + "\033[0m"; // Green
+			break;
+		case ERROR:
+			msg = "\033[31m" + msg + "\033[0m"; // Red
+			break;
+		case VERBOSE:
+			msg = "\033[36m" + msg + "\033[0m"; // Cyan
+			break;
+		case WARNING:
+			msg = "\033[33m" + msg + "\033[0m"; // Yellow
+			break;
+		case WTF:
+			msg = "\033[35m" + msg + "\033[0m"; // Magenta
+			break;
+		default:
+			break;
+		}
 	}
 	if (loggingCallback != nullptr)
 	{

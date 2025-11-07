@@ -52,6 +52,7 @@ public:
 
 	void setPrint(bool state);
 	void showTime(bool state);
+	void setColors(bool state);
 	void setLogCallback(void (*callback)(Level, unsigned long, String));
 
 	void d(String msg);
@@ -76,6 +77,7 @@ private:
 	void (*loggingCallback)(Level, unsigned long, String) = nullptr;
 	bool _print;
 	bool _time;
+	bool _colors;
 
 	String levelName(Level level);
 	void sendLogs(Level level, String message);

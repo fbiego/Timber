@@ -55,6 +55,8 @@ void setup()
 
   // Timber.showTime(true); // show the running time [from millis()]
 
+  // Timber.setColors(true); // enable colors in the logs eg for platformio terminal
+
   // start logging
   Timber.i("Setup complete");
   Timber.d("Time %d", millis());
