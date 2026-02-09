@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Timber Web Serial Terminal</title>
+
+    <style>
+        body {
+            font-family: monospace;
+            background: #0f1115;
+            color: #e0e0e0;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #161a22;
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button,
+        select,
+        input {
+            background: #2b3245;
+            color: #fff;
+            border: none;
+            padding: 6px 8px;
+            font-family: monospace;
+        }
+
+        #table-container {
+            flex: 1;
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: #161a22;
+            z-index: 1;
+        }
+
+        th,
+        td {
+            padding: 4px 8px;
+            border-bottom: 1px solid #222;
+            vertical-align: top;
+        }
+
+        th {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        td.time {
+            width: 80px;
+            color: #aaa;
+            user-select: none;
+        }
+
+        td.level {
+            width: 90px;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        td.message {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .level-debug {
+            color: #4c8cff;
+        }
+
+        .level-info {
+            color: #4caf50;
+        }
+
+        .level-error {
+            color: #f44336;
+        }
+
+        .level-verbose {
+            color: #00bcd4;
+        }
+
+        .level-warning {
+            color: #ff9800;
+        }
+
+        .level-wtf {
+            color: #e040fb;
+        }
+
+        .level-unknown {
+            color: #9e9e9e;
+        }
+
+        footer {
+            display: flex;
+            padding: 8px;
+            gap: 6px;
+            background: #161a22;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <button id="connect">Connect</button>
+
+        <select id="baud">
+            <option>9600</option>
+            <option>19200</option>
+            <option>38400</option>
+            <option selected>115200</option>
+            <option>230400</option>
+            <option>460800</option>
+            <option>921600</option>
+        </select>
+
+        <label><input type="checkbox" checked data-level="DEBUG"> DEBUG</label>
+        <label><input type="checkbox" checked data-level="INFO"> INFO</label>
+        <label><input type="checkbox" checked data-level="ERROR"> ERROR</label>
+        <label><input type="checkbox" checked data-level="VERBOSE"> VERBOSE</label>
+        <label><input type="checkbox" checked data-level="WARNING"> WARNING</label>
+        <label><input type="checkbox" checked data-level="WTF"> WTF</label>
+    </header>
+
+    <div id="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:80px">Time</th>
+                    <th style="width:90px">Level</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody id="log-body"></tbody>
+        </table>
+    </div>
+
+    <footer>
+        <input id="tx" style="flex:1" placeholder="Type and press Enter…" />
+        <button id="send">Send</button>
+    </footer>
+
+    <script>
+        const logBody = document.getElementById('log-body');
+        const connectBtn = document.getElementById('connect');
+        const baudSelect = document.getElementById('baud');
+        const txInput = document.getElementById('tx');
+
+        let port, reader, writer;
+        const logs = [];
+
+        const enabledLevels = new Set([
+            'DEBUG', 'INFO', 'ERROR', 'VERBOSE', 'WARNING', 'WTF'
+        ]);
+
+        const LOG_REGEX =
+            /^(?:(\d+)\s+)?\[(DEBUG|INFO|ERROR|VERBOSE|WARNING|WTF)\]:\s*(.*)$/;
+
+        function stripAnsi(str) {
+            return str.replace(/\x1b\[[0-9;]*m/g, '');
+        }
+
+        function parseLogLine(raw) {
+            const clean = stripAnsi(raw).trim();
+            const match = clean.match(LOG_REGEX);
+
+            if (!match) {
+                return { level: 'UNKNOWN', timestamp: '', message: clean };
+            }
+
+            return {
+                timestamp: match[1] ?? '',
+                level: match[2],
+                message: match[3]
+            };
+        }
+
+        function render() {
+            logBody.innerHTML = '';
+
+            for (const log of logs) {
+                if (!enabledLevels.has(log.level)) continue;
+
+                const tr = document.createElement('tr');
+
+                tr.innerHTML = `
+        <td class="time level-${log.level.toLowerCase()}">${log.timestamp}</td>
+        <td class="level level-${log.level.toLowerCase()}">${log.level}</td>
+        <td class="message level-${log.level.toLowerCase()}">${log.message}</td>
+      `;
+
+                logBody.appendChild(tr);
+            }
+        }
+
+        document.querySelectorAll('input[data-level]').forEach(cb => {
+            cb.addEventListener('change', () => {
+                cb.checked
+                    ? enabledLevels.add(cb.dataset.level)
+                    : enabledLevels.delete(cb.dataset.level);
+                render();
+            });
+        });
+
+        connectBtn.addEventListener('click', async () => {
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: Number(baudSelect.value) });
+
+            writer = port.writable.getWriter();
+            reader = port.readable.getReader();
+
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    logs.push(parseLogLine(line));
+                    render();
+                }
+            }
+        });
+
+        function sendLine() {
+            if (!writer || !txInput.value) return;
+            writer.write(new TextEncoder().encode(txInput.value + '\n'));
+            txInput.value = '';
+        }
+
+        document.getElementById('send').onclick = sendLine;
+        txInput.onkeydown = e => e.key === 'Enter' && sendLine();
+    </script>
+
+</body>
+
+</html>

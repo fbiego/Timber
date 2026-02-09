@@ -1,6 +1,10 @@
 # Timber
 This is a wrapper logger Arduino library that takes inspiration from [Timber](https://github.com/JakeWharton/timber) but is not directly associated with it.
 
+## Web Serial Terminal
+
+https://fbiego.com/timber/
+
 
 ## Functions
 
