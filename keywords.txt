@@ -1,20 +1,40 @@
-Timber		KEYWORD1
+Timber			KEYWORD1
+TimberClass		KEYWORD1
 
-setLogCallback			KEYWORD2
-setDebug			KEYWORD2
-setColors           KEYWORD2
-d	KEYWORD2
-e	KEYWORD2
-i	KEYWORD2
-v	KEYWORD2
-w   KEYWORD2
-wtf	KEYWORD2
+setOutput		KEYWORD2
+setTimeFunc		KEYWORD2
+enableColors		KEYWORD2
+enableTimestamp		KEYWORD2
 
-DEBUG   LITERAL1
-ERROR   LITERAL1
-INFO    LITERAL1
-WARNING LITERAL1
-WTF     LITERAL1
-VERBOSE LITERAL1
+d			KEYWORD2
+i			KEYWORD2
+w			KEYWORD2
+e			KEYWORD2
+v			KEYWORD2
+wtf			KEYWORD2
+log			KEYWORD2
 
-Level   LITERAL1
+timber_set_output	KEYWORD2
+timber_set_time_func	KEYWORD2
+timber_enable_colors	KEYWORD2
+timber_enable_timestamp	KEYWORD2
+
+timber_log		KEYWORD2
+timber_d		KEYWORD2
+timber_i		KEYWORD2
+timber_w		KEYWORD2
+timber_e		KEYWORD2
+timber_v		KEYWORD2
+timber_wtf		KEYWORD2
+
+
+TIMBER_LEVEL_DEBUG	LITERAL1
+TIMBER_LEVEL_INFO	LITERAL1
+TIMBER_LEVEL_WARNING	LITERAL1
+TIMBER_LEVEL_ERROR	LITERAL1
+TIMBER_LEVEL_VERBOSE	LITERAL1
+TIMBER_LEVEL_WTF	LITERAL1
+
+timber_level_t		LITERAL1
+timber_output_func_t	LITERAL1
+timber_time_func_t	LITERAL1

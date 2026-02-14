@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timber Web Serial Console</title>
+
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      overflow: hidden;
+    }
+
+    .log-grid {
+      display: grid;
+      grid-template-columns:
+        var(--col-time, 140px) var(--col-level, 100px) 1fr;
+      align-items: start;
+    }
+
+
+    .log-row {
+      border-bottom: 1px solid rgba(62, 65, 91, 0.4);
+    }
+
+    .log-cell {
+      padding: 4px 8px;
+      align-self: start;
+    }
+
+    .time-cell,
+    .level-cell {
+      user-select: none;
+    }
+
+
+
+    .message-cell {
+      user-select: text;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body class="bg-[#1c1c28] text-[#e1e1e6] h-screen flex flex-col font-mono">
+
+  <!-- HEADER -->
+  <header class="h-12 bg-[#28293d] border-b border-[#3e415b] px-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="material-icons text-text-muted">grid_view</span>
+      <h1 class="text-sm font-bold tracking-tight">Timber Web Serial Console</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="aboutBtn" class="text-text-muted hover:text-white transition-colors" title="About">
+        <span class="material-icons text-xl">info</span>
+      </button>
+      <a href="https://github.com/fbiego/Timber" target="_blank"
+        class="text-text-muted hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path
+            d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+        </svg>
+      </a>
+      <button id="settingsBtn" class="text-text-muted hover:text-white transition-colors">
+
+        <span class="material-icons text-xl">settings</span>
+
+      </button>
+    </div>
+  </header>
+
+  <!-- TOOLBAR -->
+  <div id="toolbar" class="h-12 bg-[#28293d] border-b border-[#3e415b] px-4 flex items-center gap-3 relative">
+
+    <!-- Custom Baud Button -->
+    <button id="baudBtn" class="bg-[#1c1c28] border border-[#3e415b] rounded px-3 py-1 text-sm">
+      115200 ▼
+    </button>
+
+    <button id="connectBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-1 rounded text-sm font-bold">
+      Connect
+    </button>
+
+
+    <button id="filterBtn" class="bg-[#3e415b] hover:bg-[#4e516b] px-3 py-1 rounded text-sm">
+      Filters
+    </button>
+
+    <button id="saveBtn" class="bg-[#3e415b] hover:bg-[#4e516b] px-3 py-1 rounded text-sm">
+      Save Logs
+    </button>
+
+    <button id="clearBtn" class="bg-[#3e415b] hover:bg-[#4e516b] px-3 py-1 rounded text-sm">
+      Clear
+    </button>
+
+
+    <div class="flex items-center gap-4 ml-auto">
+
+      <!-- Filter Active -->
+      <div id="filterActiveIndicator" class="hidden text-yellow-400 text-sm font-semibold cursor-pointer">
+        ⚠ Filter Active
+      </div>
+
+      <!-- Hidden Logs -->
+      <div id="hiddenLogsIndicator" class="hidden text-orange-400 text-sm font-semibold cursor-pointer">
+        👁 Hidden Logs
+      </div>
+
+      <!-- Scroll -->
+      <div id="scrollIndicator" class="hidden text-blue-400 text-sm font-semibold cursor-pointer">
+        ⏸ Scroll Paused
+      </div>
+
+    </div>
+
+
+  </div>
+
+  <!-- LOG VIEW -->
+  <main class="flex-1 overflow-hidden flex flex-col">
+    <div class="log-grid bg-[#1c1c28] border-b border-[#3e415b] text-xs uppercase tracking-widest">
+
+      <div id="headerTime"
+        class="log-cell text-gray-400 flex items-center gap-2 cursor-pointer select-none overflow-hidden">
+
+
+        <span id="timeIcon">🕒</span>
+        <span id="timeLabel">Timestamp</span>
+
+      </div>
+
+      <div id="headerLevel"
+        class="log-cell text-gray-400 flex items-center gap-2 cursor-pointer select-none overflow-hidden">
+
+        <span id="levelIcon">🏷</span>
+        <span id="levelLabel">Level</span>
+
+      </div>
+
+      <div class="log-cell text-gray-400">
+        <span>💬</span>
+        Message
+      </div>
+
+    </div>
+
+
+    <div id="logContainer" class="flex-1 overflow-y-auto text-sm bg-[#1c1c28]">
+    </div>
+  </main>
+
+  <!-- SEND SECTION -->
+  <footer class="bg-[#28293d] border-t border-[#3e415b] flex flex-col">
+
+    <!-- Resize Bar -->
+    <div id="resizeHandle" class="h-2 cursor-row-resize bg-[#3e415b] hover:bg-blue-500 transition-colors">
+    </div>
+
+    <div class="p-4 flex gap-4">
+
+      <!-- INPUT -->
+      <textarea id="commandInput"
+        class="flex-1 bg-[#1c1c28] border border-[#3e415b] rounded p-3 text-sm resize-none min-h-[100px]"
+        placeholder="Your input here..."></textarea>
+
+      <!-- SIDE CONTROLS -->
+      <div class="w-48 flex flex-col gap-3">
+
+        <!-- MODE SELECT -->
+        <div class="flex bg-[#1c1c28] border border-[#3e415b] rounded overflow-hidden">
+          <button id="asciiBtn" class="flex-1 text-xs font-bold bg-[#3e415b] py-2">
+            ASCII
+          </button>
+          <button id="hexBtn" class="flex-1 text-xs font-bold py-2">
+            HEX
+          </button>
+        </div>
+
+        <!-- ASCII OPTIONS -->
+        <div id="asciiOptions">
+
+          <button id="lineEndingBtn" class="w-full bg-[#1c1c28] border border-[#3e415b] rounded px-3 py-2 text-xs">
+            Line Ending: LF ▼
+          </button>
+
+        </div>
+
+        <!-- HEX OPTIONS -->
+        <div id="hexOptions" class="hidden flex flex-col gap-2 text-xs">
+
+          <label class="flex items-center gap-2">
+            <input type="checkbox" id="hexMultiline">
+            Multiline
+          </label>
+
+          <label id="hexDelayLabel" class="flex items-center gap-2 hidden">
+            <input type="checkbox" id="hexDelayToggle">
+            Delay Between Lines
+          </label>
+
+          <input id="hexDelayInput" type="number" min="0" value="100"
+            class="bg-[#1c1c28] border border-[#3e415b] rounded px-2 py-1 text-xs hidden" placeholder="Delay (ms)">
+        </div>
+
+        <label id="enterSendLabel" class="flex items-center gap-2 text-xs">
+          <input type="checkbox" id="enterToSend">
+          Enter to Send
+        </label>
+
+        <button id="sendBtn" class="bg-blue-600 hover:bg-blue-700 rounded py-2 text-sm font-bold">
+          SEND
+        </button>
+
+      </div>
+
+    </div>
+  </footer>
+
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+
+    <div class="bg-[#28293d] border border-[#3e415b] rounded-lg w-[420px] p-6">
+
+      <h2 class="text-lg font-bold mb-6">Preferences</h2>
+
+      <!-- GENERAL -->
+      <div class="mb-6">
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input id="prefUseSystemTimestamp" type="checkbox" class="w-4 h-4">
+          <span class="text-sm">
+            Use system timestamp if log has no timestamp
+          </span>
+        </label>
+      </div>
+
+      <!-- COLORS -->
+      <div>
+        <div class="text-xs uppercase text-gray-400 font-bold mb-3">
+          Log Colors
+        </div>
+
+        <div class="flex gap-4 mb-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="colorMode" value="default">
+            Default
+          </label>
+
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="colorMode" value="custom">
+            Custom
+          </label>
+        </div>
+
+        <!-- Custom Colors Container -->
+        <div id="customColorsContainer" class="hidden grid grid-cols-2 gap-3 text-sm">
+
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="flex justify-end gap-3 mt-8">
+        <button id="closeSettingsBtn" class="px-4 py-2 bg-gray-600 rounded text-sm">
+          Cancel
+        </button>
+
+        <button id="saveSettingsBtn" class="px-4 py-2 bg-blue-600 rounded text-sm font-bold">
+          Save
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed right-6 z-50 flex flex-col gap-3">
+  </div>
+
+  <div id="logContextMenu" class="hidden fixed bg-[#28293d] border border-[#3e415b] rounded shadow-lg text-sm z-50">
+
+    <div id="viewHexOption" class="px-4 py-2 hover:bg-[#3e415b] cursor-pointer">
+      Toggle ASCII/HEX
+    </div>
+
+    <div id="copyASCIIOption" class="px-4 py-2 hover:bg-[#3e415b] cursor-pointer">
+      Copy ASCII
+    </div>
+
+    <div id="copyHexOption" class="px-4 py-2 hover:bg-[#3e415b] cursor-pointer">
+      Copy HEX
+    </div>
+
+  </div>
+
+  <div id="aboutDialog" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+
+    <div class="bg-[#28293d] border border-[#3e415b] rounded-lg shadow-lg w-[420px] max-w-[90%]">
+
+      <!-- Header -->
+      <div class="flex justify-between items-center px-4 py-3 border-b border-[#3e415b]">
+        <div class="font-semibold text-lg">About Timber Web Serial Console </div>
+
+        <button id="aboutCloseBtn" class="text-gray-400 hover:text-white">
+          ✕
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="px-4 py-4 text-sm text-gray-300 space-y-3">
+
+        <div>
+          <b>Timber Web Serial Consoler</b> is a browser-based serial console designed
+          for embedded development, debugging, and real-time device monitoring.
+        </div>
+
+        <div>
+          Works best with the <b>Timber Arduino logging library</b>, but also fully
+          compatible with any serial output.
+        </div>
+
+        <div>
+          <b>Author:</b><br>
+          fbiego
+        </div>
+
+        <div>
+          <b>Project GitHub:</b><br>
+          <a href="https://github.com/fbiego/Timber" target="_blank" class="text-blue-400 hover:underline">
+            https://github.com/fbiego/Timber
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-4 py-3 border-t border-[#3e415b] flex justify-end">
+        <button id="aboutOkBtn" class="bg-[#3e415b] hover:bg-[#4e516b] px-4 py-1 rounded text-sm">
+          OK
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <script src="app.js">
+  </script>
+</body>
+
+</html>

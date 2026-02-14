@@ -1,7 +1,7 @@
 /*
    MIT License
 
-  Copyright (c) 2023 Felix Biego
+  Copyright (c) 2026 Felix Biego
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -30,59 +30,34 @@
 
 */
 
-#ifndef TIMBER_H
-#define TIMBER_H
+#include "timber.h"
 
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif
 
-enum Level
+TimberClass Timber;
+
+#ifdef ARDUINO
+
+static uint32_t timber_default_time()
 {
-	DEBUG = 0,
-	INFO,
-	ERROR,
-	VERBOSE,
-	WARNING,
-	WTF
-};
+    return millis();
+}
 
-class TimberClass
+static void timber_default_output(
+    timber_level_t level,
+    uint32_t timestamp,
+    const char *message)
 {
+    Serial.write(message);
+}
 
-public:
 
-	void setPrint(bool state);
-	void showTime(bool state);
-	void setColors(bool state);
-	void setLogCallback(void (*callback)(Level, unsigned long, String));
-
-	void d(String msg);
-	void d(const char *format, ...);
-	void e(String msg);
-	void e(const char *format, ...);
-	void i(String msg);
-	void i(const char *format, ...);
-	void v(String msg);
-	void v(const char *format, ...);
-	void w(String msg);
-	void w(const char *format, ...);
-	void wtf(String msg);
-	void wtf(const char *format, ...);
-
-	void log(Level level, String msg);
-	void log(Level level, const char *format, ...);
-
-	
-
-private:
-	void (*loggingCallback)(Level, unsigned long, String) = nullptr;
-	bool _print;
-	bool _time;
-	bool _colors;
-
-	String levelName(Level level);
-	void sendLogs(Level level, String message);
-};
-
-extern TimberClass Timber;
+__attribute__((constructor)) static void timber_auto_init(void)
+{
+    timber_set_output(timber_default_output);
+    timber_set_time_func(timber_default_time);
+}
 
 #endif
